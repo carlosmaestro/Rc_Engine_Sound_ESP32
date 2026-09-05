@@ -7,7 +7,9 @@
  */
 
 // Hardware settings -------------------------------------------------------------------------------------------------------------------------------
-//#define WEMOS_D1_MINI_ESP32 // Software is running on ESP32 RC Trailer controller, if defined (Headlights on GPIO 22 instead of 3, no cab lights support)
+// Board pin layout is now selected in "src/hardwareLayout.h" (LAYOUT_STOCK_30PIN / LAYOUT_WEMOS_D1_MINI / LAYOUT_CARLOS_BT_CAR ...).
+// The old "#define WEMOS_D1_MINI_ESP32" here is superseded by "#define LAYOUT_WEMOS_D1_MINI" in that file.
+//#define WEMOS_D1_MINI_ESP32 // (legacy) Headlights on GPIO 22 instead of 3, no cab lights support. Prefer the layout selector.
 
 // Debug settings -----------------------------------------------------------------------------------------------------------------------------------
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!

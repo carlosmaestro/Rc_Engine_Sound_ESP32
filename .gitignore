@@ -5,3 +5,8 @@ documentation/HowToOrderYourPCB.docx
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+# junk / IDE / local backups
+.idea/
+src/.vscode/
+src/src copy.txt
+**/.DS_Store
