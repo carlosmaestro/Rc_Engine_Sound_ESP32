@@ -163,11 +163,27 @@ volatile int bucketRattleVolumePercentage = 160; // Adjust the volume (usually =
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
-const uint8_t escRampTimeFirstGear = 5; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
-const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
-const uint8_t escBrakeSteps = 100; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
-const uint8_t escAccelerationSteps = 5; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
+// TUNE_* defaults may be overridden by a build profile / a tuning set (e.g. src/tuning/agileCar.h).
+#ifndef TUNE_ESC_RAMP_1ST
+#define TUNE_ESC_RAMP_1ST 5
+#endif
+#ifndef TUNE_ESC_RAMP_2ND
+#define TUNE_ESC_RAMP_2ND 50
+#endif
+#ifndef TUNE_ESC_RAMP_3RD
+#define TUNE_ESC_RAMP_3RD 75
+#endif
+#ifndef TUNE_ESC_BRAKE_STEPS
+#define TUNE_ESC_BRAKE_STEPS 100
+#endif
+#ifndef TUNE_ESC_ACCEL_STEPS
+#define TUNE_ESC_ACCEL_STEPS 5
+#endif
+const uint8_t escRampTimeFirstGear = TUNE_ESC_RAMP_1ST; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
+const uint8_t escRampTimeSecondGear = TUNE_ESC_RAMP_2ND; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeThirdGear = TUNE_ESC_RAMP_3RD; // 75 for King Hauler
+const uint8_t escBrakeSteps = TUNE_ESC_BRAKE_STEPS; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
+const uint8_t escAccelerationSteps = TUNE_ESC_ACCEL_STEPS; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
 const boolean automatic = true; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
@@ -183,8 +199,14 @@ uint16_t clutchEngagingPoint = 500; // CEP. The "clutch" is engaging above this 
 uint32_t MAX_RPM_PERCENTAGE = 200; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
-const int8_t acc = 6; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
-const int8_t dec = 3; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
+#ifndef TUNE_ENGINE_ACC
+#define TUNE_ENGINE_ACC 6
+#endif
+#ifndef TUNE_ENGINE_DEC
+#define TUNE_ENGINE_DEC 3
+#endif
+const int8_t acc = TUNE_ENGINE_ACC; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t dec = TUNE_ENGINE_DEC; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3

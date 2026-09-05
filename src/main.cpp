@@ -47,6 +47,10 @@ char codeVersion[] = "9.13.0"; // Software revision.
 
 #include <Arduino.h>
 
+// Build profile (src/profiles/<name>.h, selected by -D PROFILE_<NAME> in platformio.ini).
+// MUST come first: it drives vehicle selection in 1_Vehicle.h and the guarded toggles in 2_/3_/6_.
+#include "profiles/active.h"
+
 // All the required user settings are done in the following .h files:
 #include "0_GeneralSettings.h" // <<------- general settings
 #include "1_Vehicle.h"         // <<------- Select the vehicle you want to simulate
@@ -59,7 +63,6 @@ char codeVersion[] = "9.13.0"; // Software revision.
 #include "8_Sound.h"           // <<------- Sound related adjustments
 #include "9_Dashboard.h"       // <<------- Dashboard related adjustments
 #include "10_Trailer.h"        // <<------- Trailer related adjustments
-#include "hardwareLayout.h"    // <<------- Board pin layout selector (overrides the PIN ASSIGNMENTS block below)
 
 // TODO = Things to clean up!
 
@@ -143,9 +146,9 @@ char codeVersion[] = "9.13.0"; // Software revision.
 // provides short circuit protection. Also works on the serial Rx pin "VP" (36)
 // ------------------------------------------------------------------------------------
 
-// NOTE: every #define below is wrapped in #ifndef so "hardwareLayout.h" (included above) can override it.
-// The internal #ifdef WEMOS_D1_MINI_ESP32 / THIRD_BRAKELIGHT / NEOPIXEL_ON_CH4 branches still provide the
-// default when the selected layout does not set that pin explicitly.
+// NOTE: every #define below is wrapped in #ifndef so the active build profile (profiles/active.h,
+// included first) can override it. The internal #ifdef WEMOS_D1_MINI_ESP32 / THIRD_BRAKELIGHT /
+// NEOPIXEL_ON_CH4 branches still provide the default when the profile does not set that pin.
 
 // Serial DEBUG pins -----
 #ifndef DEBUG_RX
@@ -284,6 +287,9 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = PWM_PINS_INIT;
 #endif
 #ifndef DAC2
 #define DAC2 26 // connect pin26 (do not change the pin) to a 10kOhm resistor
+#endif
+#if DAC1 != 25 || DAC2 != 26
+#error "DAC1/DAC2 must stay 25/26 (engine sound audio output). Check your build profile."
 #endif
 // both outputs of the resistors above are connected together and then to the outer leg of a
 // 20kOhm potentiometer. The other outer leg connects to GND. The middle leg connects to both inputs
@@ -1835,6 +1841,9 @@ void setup() {
     Serial.printf(
         "ESC ramp time for crawler mode: %i (about 10 - 15), less = more direct control = less virtual inertia)\n",
         crawlerEscRampTime);
+    Serial.printf("Global acceleration: %i %%\n", globalAccelerationPercentage);
+    Serial.printf("Vehicle ramp/accel (feel): escRampTime 2nd=%i, accelSteps=%i, brakeSteps=%i, engine acc/dec=%i/%i\n",
+                  escRampTimeSecondGear, escAccelerationSteps, escBrakeSteps, acc, dec);
 
     Serial.printf(
         "**************************************************************************************************\n\n");

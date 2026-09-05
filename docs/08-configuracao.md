@@ -8,33 +8,29 @@ lidos em tempo de compilação por `main.cpp`. Algumas variáveis são depois
 
 ```mermaid
 flowchart TB
-    M["main.cpp"] --> G0["0_generalSettings.h  (WiFi, debug, eeprom_id)"]
-    M --> V["1_Vehicle.h  ->  vehicles/VolvoL120H.h  ->  vehicles/sounds/*.h"]
-    M --> R["2_Remote.h  (perfil de rádio + protocolo)"]
-    M --> E["3_ESC.h  (ESC + bateria + mensagem out-of-fuel)"]
-    M --> T["4_Transmission.h"]
-    M --> S["5_Shaker.h"]
-    M --> L["6_Lights.h  (+ Neopixel, THIRD_BRAKELIGHT)"]
-    M --> SV["7_Servos.h  (perfis de servo BUS)"]
-    M --> SD["8_Sound.h  (volume mestre global)"]
-    M --> D["9_Dashboard.h  (LCD ST7735)"]
-    M --> TR["10_Trailer.h  (MACs ESP-NOW)"]
-    M --> HL["hardwareLayout.h  (POR ÚLTIMO — seletor de pinos, pode #undef/#define toggles)"]
-    M --> AUX["src/curves.h, helper.h, dashboard.h, SUMD.h, sbus.h,\nwebInterface.h, serialInterface.h, input/BluetoothInput.h"]
+    M["main.cpp"] --> P["profiles/active.h  (PRIMEIRO — o build profile: veículo, comm, toggles, pinos, tuning)"]
+    P --> G0["0_generalSettings.h  (WiFi, debug, eeprom_id)"]
+    P --> V["1_Vehicle.h  ->  #include PROFILE_VEHICLE (ou lista manual)  ->  vehicles/sounds/*.h"]
+    P --> R["2_Remote.h  (perfil de rádio + comm: fallback só #if nada escolhido)"]
+    P --> E["3_ESC.h  (ESC + bateria; #if PROFILE_BATTERY_PROTECTION ; consts = TUNE_*)"]
+    P --> S["5_Shaker.h"]
+    P --> L["6_Lights.h  (#if PROFILE_NEOPIXEL / PROFILE_THIRD_BRAKELIGHT)"]
+    P --> DEMAIS["4_/7_/8_/9_/10_ ...  +  src/curves.h, helper.h, ..., input/BluetoothInput.h"]
 ```
 
-> `hardwareLayout.h` é incluído **depois** de `0_`..`10_` de propósito — ver
-> [10 — Layouts de hardware](10-layouts-de-hardware.md).
+> `profiles/active.h` é incluído **antes** de `0_`..`10_` de propósito (dirige a seleção
+> de veículo e os toggles guardados) — ver [10 — Build profiles](10-profiles-de-build.md).
 
 ## Cabeçalhos globais
 
 | Arquivo | Principais chaves |
 |---------|-------------------|
-| `0_generalSettings.h` | `WEMOS_D1_MINI_ESP32` (off), flags de `DEBUG`, `eeprom_id = 5`, `ENABLE_WIRELESS` (**off**), `cpType = WIFI_POWER_7dBm`, `default_ssid = "My_Truck"`, `default_password = "123456789"`, `USE_CSS`/`MODERN_CSS` |
-| `2_Remote.h` | perfil de rádio (`FLYSKY_FS_I6S_LOADER`); **modo de comunicação**: `IBUS_COMMUNICATION` (padrão) ou `BLUETOOTH_COMMUNICATION` (carro BT, ver [doc 11](11-mapa-controle-bluetooth.md)); `EMBEDDED_SBUS`, `EXPONENTIAL_THROTTLE`, `CHANNEL_AVERAGING` (off), `channelReversed[]`/`channelAutoZero[]`, `pulseNeutral`/`pulseSpan` |
-| `hardwareLayout.h` | **layout de pinos**: `LAYOUT_STOCK_30PIN` (padrão) / `LAYOUT_WEMOS_D1_MINI` / `LAYOUT_CARLOS_BT_CAR`. Ver [doc 10](10-layouts-de-hardware.md) |
+| `profiles/*.h` + `platformio.ini` | **o build profile** (`pio run -e <env>`): `PROFILE_VEHICLE`, comm mode, perfil de rádio, `PROFILE_NEOPIXEL`/`PROFILE_BATTERY_PROTECTION`/`PROFILE_THIRD_BRAKELIGHT`/`PROFILE_EXPO_THROTTLE`, `RZ7886_DRIVER_MODE`, pinos, `TUNE_*`. Ver [doc 10](10-profiles-de-build.md). |
+| `tuning/agileCar.h` | set `TUNE_*` "carrinho ágil" (usado pelo `carlos_bt_car`). Ver [doc 10](10-profiles-de-build.md) |
+| `0_generalSettings.h` | `WEMOS_D1_MINI_ESP32` (vem do profile), flags de `DEBUG`, `eeprom_id = 6`, `ENABLE_WIRELESS` (**off**), `cpType = WIFI_POWER_7dBm`, `default_ssid`/`default_password`, `USE_CSS`/`MODERN_CSS` |
+| `2_Remote.h` | perfil de rádio + comm mode (só **fallback** `#if` o profile não escolheu: `FLYSKY_FS_I6S_LOADER` / `IBUS_COMMUNICATION`); `EMBEDDED_SBUS`, `PROFILE_EXPO_THROTTLE`→`EXPONENTIAL_THROTTLE`, `channelReversed[]`/`channelAutoZero[]`, `pulseNeutral`/`pulseSpan` |
 | `BluetoothMapping.h` | mapa gamepad→canal + tuning do modo Bluetooth. Ver [doc 11](11-mapa-controle-bluetooth.md) |
-| `3_ESC.h` | `QUICRUN_FUSION`/`ESC_DIR` (off), `RZ7886_DRIVER_MODE` (off), `brakeMargin=10`, `escPulseSpan=600`, `escTakeoffPunch=0`, `escReversePlus=0`, `crawlerEscRampTime=10`, `globalAccelerationPercentage=100`, **`BATTERY_PROTECTION`** + calibração do divisor + `#include OutOfFuelEnglish.h` |
+| `3_ESC.h` | `QUICRUN_FUSION`/`ESC_DIR` (off); `escPulseSpan`/`escTakeoffPunch`/`crawlerEscRampTime`/`globalAccelerationPercentage` = `TUNE_*` (default overridável pelo profile); `#if PROFILE_BATTERY_PROTECTION`→`BATTERY_PROTECTION` + calibração do divisor + `#include OutOfFuelEnglish.h` |
 | `4_Transmission.h` | `VIRTUAL_3_SPEED`, `TRANSMISSION_NEUTRAL`, `maxClutchSlippingRpm=250`, `lowRangePercentage=58`, `automaticReverseAccelerationPercentage=100`; off: `SEMI_AUTOMATIC`, `MODE1_SHIFTING`, `DOUBLE_CLUTCH`, `OVERDRIVE`, `HIGH_SLIPPINGPOINT`, `VIRTUAL_16_SPEED_SEQUENTIAL` |
 | `5_Shaker.h` | `GT_POWER_STOCK`, `shakerStart/Idle/FullThrottle/Stop` |
 | `6_Lights.h` | `NEOPIXEL_ENABLED`, `NEOPIXEL_COUNT=8`, `NEOPIXEL_BRIGHTNESS=127`, `neopixelMode=2`, `NEOPIXEL_HIGHBEAM`, **`THIRD_BRAKELIGHT`** (GPIO32), + brilhos/flags de luz (EEPROM) |
@@ -59,7 +55,8 @@ prontos (caminhões US/EU, carros, SUVs, tanques, tratores, escavadeiras, locomo
 aviões). Os `.h` de som ficam em `vehicles/sounds/`.
 
 ### Trocar o veículo
-1. Em `1_Vehicle.h`, comente a linha ativa e descomente a do veículo desejado.
+1. No build profile (`src/profiles/<seu>.h`): `#define PROFILE_VEHICLE "vehicles/<X>.h"`.
+   (Sem profile, no fallback: em `1_Vehicle.h`, comente a linha ativa e descomente a desejada.)
 2. Confira o **modo de veículo** do novo preset e ajuste `2_Remote.h` (perfil + protocolo)
    e `7_Servos.h` de acordo.
 3. Recompile e grave (ver [09](09-build-e-deploy.md)).

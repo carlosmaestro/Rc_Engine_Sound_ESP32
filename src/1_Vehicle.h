@@ -3,6 +3,11 @@
 // VEHICLE SETTINGS ****************************************************************************************************
 // Select the vehicle preset you want (uncomment the one you want, remove //, never more than one)
 
+// If a build profile (src/profiles/*.h) set PROFILE_VEHICLE, use it and skip the manual list below.
+#ifdef PROFILE_VEHICLE
+#include PROFILE_VEHICLE
+#else
+
 // Master --------
 // #include "vehicles/00_Master.h" // This master preset file contains all available sound files, which are not used in existing vehicle presets
 
@@ -110,3 +115,5 @@
 
 // Generic Diesels --------
 // #include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission (optimised for smaller speakers)
+
+#endif // PROFILE_VEHICLE

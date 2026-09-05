@@ -3,10 +3,10 @@
 Mapa de GPIO da **placa padrão (30 pinos)**, conforme os `#define` no bloco
 "PIN ASSIGNMENTS" de `src/main.cpp` (linhas ~148–285, agora todos sob `#ifndef`).
 
-> A pinagem é selecionável por **layout de hardware** — ver
-> [10 — Layouts de hardware](10-layouts-de-hardware.md). `src/hardwareLayout.h` escolhe
-> `LAYOUT_STOCK_30PIN` (esta tabela), `LAYOUT_WEMOS_D1_MINI` ou `LAYOUT_CARLOS_BT_CAR`
-> (carro Bluetooth do usuário, pinos de `referencia/Controller.ino`).
+> A pinagem é definida pelo **build profile** ativo — ver
+> [10 — Build profiles](10-profiles-de-build.md). Esta tabela é o profile `l120h_radio`
+> (placa 30 pinos). O `carlos_bt_car` remapeia tudo para os pinos de
+> `referencia/Controller.ino`; o `wemos_d1_mini` muxa faróis/DEBUG_RX.
 
 ## Entradas
 

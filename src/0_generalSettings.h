@@ -7,9 +7,9 @@
  */
 
 // Hardware settings -------------------------------------------------------------------------------------------------------------------------------
-// Board pin layout is now selected in "src/hardwareLayout.h" (LAYOUT_STOCK_30PIN / LAYOUT_WEMOS_D1_MINI / LAYOUT_CARLOS_BT_CAR ...).
-// The old "#define WEMOS_D1_MINI_ESP32" here is superseded by "#define LAYOUT_WEMOS_D1_MINI" in that file.
-//#define WEMOS_D1_MINI_ESP32 // (legacy) Headlights on GPIO 22 instead of 3, no cab lights support. Prefer the layout selector.
+// Pinos, veiculo, modo de comunicacao e tuning sao selecionados pelo "build profile" ativo
+// (src/profiles/*.h, escolhido por -D PROFILE_<NOME> no platformio.ini). Ver docs/10.
+//#define WEMOS_D1_MINI_ESP32 // (legacy) definido pelo profile WemosD1Mini; nao mexer aqui.
 
 // Debug settings -----------------------------------------------------------------------------------------------------------------------------------
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
@@ -24,7 +24,8 @@
 //#define CORE_DEBUG // Don't use this!
 
 // EEPROM settings ---------------------------------------------------------------------------------------------------------------------------------
-uint8_t eeprom_id = 5; // change this id (between 1 and 255, compare with serial monitor), if you want to restore EEPROM defaults (executed if different) <<------------- NOTE!
+uint8_t eeprom_id = 6; // change this id (between 1 and 255, compare with serial monitor), if you want to restore EEPROM defaults (executed if different) <<------------- NOTE!
+                       // bumped 5 -> 6: EEPROM-backed ESC tuning defaults (escTakeoffPunch, globalAccelerationPercentage) changed via the profile/tuning system.
 //#define ERASE_EEPROM_ON_BOOT // EEPROM is completely overwritten, if defined! Never define it, vehicle will not work!
 // only define it in order to clean up junk from old projects in your EEPROM
 

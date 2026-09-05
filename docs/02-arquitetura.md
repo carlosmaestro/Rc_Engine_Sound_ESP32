@@ -1,8 +1,8 @@
 # 02 — Arquitetura
 
 Quase todo o firmware está em `src/main.cpp` (~5.700 linhas). Os arquivos `0_*.h` ..
-`10_*.h`, `hardwareLayout.h`, `BluetoothMapping.h` e `vehicles/*.h` são **incluídos**
-por `main.cpp` e contêm só `#define`s / variáveis de configuração. Os únicos `.cpp`
+`10_*.h`, `profiles/*.h`, `tuning/*.h`, `BluetoothMapping.h` e `vehicles/*.h` são
+**incluídos** por `main.cpp` e contêm só `#define`s / variáveis de configuração. Os únicos `.cpp`
 separados são `src/input/BluetoothInput.cpp` (receptor virtual Bluetooth) e os
 auxiliares em `src/src/` (`SUMD.cpp`, `sbus.cpp`, `dashboard.cpp`). `main.h` traz as
 _forward declarations_ que esses `.cpp` precisam.

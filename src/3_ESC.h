@@ -96,7 +96,10 @@ uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10, otherw
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
 // - Meccano Dumper = 500
 // - Volvo L120H loader = 500
-uint16_t escPulseSpan = 600; // 500 = full ESC power available, 1000 half ESC power available etc.
+#ifndef TUNE_ESC_PULSE_SPAN
+#define TUNE_ESC_PULSE_SPAN 600
+#endif
+uint16_t escPulseSpan = TUNE_ESC_PULSE_SPAN; // 500 = full ESC power available, 1000 half ESC power available etc.
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.
@@ -107,7 +110,10 @@ uint16_t escPulseSpan = 600; // 500 = full ESC power available, 1000 half ESC po
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck = 50
 // - Meccano Dumper = 0
 // - RZ7886 Driver = 0
-uint16_t escTakeoffPunch = 0;
+#ifndef TUNE_ESC_TAKEOFF_PUNCH
+#define TUNE_ESC_TAKEOFF_PUNCH 0
+#endif
+uint16_t escTakeoffPunch = TUNE_ESC_TAKEOFF_PUNCH;
 
 // Additional reverse speed (disconnect & reconnect battery after changing this setting):
 // Usually 0. Enlarge it, if your reverse speed is too slow.
@@ -120,16 +126,27 @@ uint16_t escTakeoffPunch = 0;
 uint16_t escReversePlus = 0;
 
 // Crawler mode escRampTime (see "8_Sound.h") WARNING: a very low setting may damage your transmission!
-uint8_t crawlerEscRampTime = 10; // about 10 (15 for Jeep), less = more direct control = less virtual inertia
+#ifndef TUNE_ESC_CRAWLER_RAMP
+#define TUNE_ESC_CRAWLER_RAMP 10
+#endif
+uint8_t crawlerEscRampTime = TUNE_ESC_CRAWLER_RAMP; // about 10 (15 for Jeep), less = more direct control = less virtual inertia
 
 // Allows to scale vehicle file dependent acceleration
-uint16_t globalAccelerationPercentage = 100; // about 100 - 200% (200 for Jeep, 150 for 1/8 Landy) Experimental, may cause automatic transmission shifting issues!
+#ifndef TUNE_GLOBAL_ACCEL_PCT
+#define TUNE_GLOBAL_ACCEL_PCT 100
+#endif
+uint16_t globalAccelerationPercentage = TUNE_GLOBAL_ACCEL_PCT; // about 100 - 200% (200 for Jeep, 150 for 1/8 Landy) Experimental, may cause automatic transmission shifting issues!
 
 // BATTERY PROTECTION SETTINGS *********************************************************************************************************
 
 /* Battery low discharge protection (only for boards with voltage divider resistors):
  *  IMPORTANT: Enter used resistor values in Ohms (Ω) and THEN adjust DIODE_DROP, until your readings match the actual battery voltage! */
+#ifndef PROFILE_BATTERY_PROTECTION
+#define PROFILE_BATTERY_PROTECTION 1 // a build profile sets 0 for boards without a battery voltage divider
+#endif
+#if PROFILE_BATTERY_PROTECTION
 #define BATTERY_PROTECTION               // This will disable the ESC output, if the battery cutout voltage is reached. 2 fast flashes = battery error!
+#endif
 const float CUTOFF_VOLTAGE = 3.3;        // Usually 3.3 V per LiPo cell. NEVER below 3.2 V!
 const float FULLY_CHARGED_VOLTAGE = 4.2; // Usually 4.2 V per LiPo cell, NEVER above!
 const float RECOVERY_HYSTERESIS = 0.2;   // around 0.2 V

@@ -8,7 +8,8 @@ Bluetooth (PS4/PS5)** usando a biblioteca [Bluepad32](https://bluepad32.readthed
 - Branch de trabalho: `ps4-5-bluetooth`
 - Branch principal: `master`
 - Plataforma alvo: ESP32 (`esp32dev`, 240 MHz), toolchain PlatformIO
-- Veículo configurado atualmente: **Volvo L120H** (carregadeira / `LOADER_MODE`)
+- Build por **profile** (`pio run -e <profile>`): `l120h_radio` (default), `carlos_bt_car`, `wemos_d1_mini` — ver [doc 10](10-profiles-de-build.md)
+- Veículo em todos os profiles atuais: **Volvo L120H** (carregadeira / `LOADER_MODE`)
 
 ---
 
@@ -25,7 +26,7 @@ Bluetooth (PS4/PS5)** usando a biblioteca [Bluepad32](https://bluepad32.readthed
 | 07 | [Luzes, servos e periféricos](07-luzes-servos-perifericos.md) | Luzes/Neopixel, saídas de servo MCPWM, shaker, dashboard, reboque ESP-NOW |
 | 08 | [Configuração](08-configuracao.md) | Arquivos `0_`..`10_`, presets de veículo, mapa de EEPROM, interface web/serial |
 | 09 | [Build e deploy](09-build-e-deploy.md) | `platformio.ini`, dependências, partições, gravação, depuração |
-| 10 | [Layouts de hardware](10-layouts-de-hardware.md) | `hardwareLayout.h` — seletor de pinagem por placa; `LAYOUT_CARLOS_BT_CAR` |
+| 10 | [Build profiles](10-profiles-de-build.md) | `src/profiles/*.h` — 1 arquivo por carro (veículo + pinos + comm + toggles + tuning); `pio run -e carlos_bt_car`. Set de tuning `src/tuning/agileCar.h`. |
 | 11 | [Controle Bluetooth](11-mapa-controle-bluetooth.md) | Receptor virtual, mapa gamepad→canal, failsafe, ajuste de latência |
 
 ---
@@ -38,7 +39,8 @@ Rc_Engine_Sound_ESP32/
 ├── src/
 │   ├── main.cpp              # ~5.700 linhas — todo o firmware (setup/loop/Task1 + funções)
 │   ├── main.h                # Forward declarations das funções de main.cpp
-│   ├── hardwareLayout.h      # Seletor de layout de pinos por placa (STOCK / WEMOS / CARLOS_BT_CAR) — ver doc 10
+│   ├── profiles/             # 1 arquivo por carro (active.h + L120hRadio.h / CarlosBtCar.h / WemosD1Mini.h) — ver doc 10
+│   ├── tuning/agileCar.h     # Set de tuning "carrinho ágil" (TUNE_* macros) — ver doc 10
 │   ├── BluetoothMapping.h    # Mapa gamepad → canal + constantes de ajuste (modo Bluetooth) — ver doc 11
 │   ├── input/BluetoothInput.h/.cpp  # Receptor virtual Bluepad32 (PS4/PS5) — ver doc 11
 │   ├── 0_generalSettings.h  # WiFi, debug, id de EEPROM
@@ -54,7 +56,7 @@ Rc_Engine_Sound_ESP32/
 │   ├── 10_Trailer.h         # Endereços MAC dos reboques ESP-NOW
 │   ├── src/                 # Cabeçalhos auxiliares (curves.h, helper.h, dashboard, sbus, SUMD, webInterface.h)
 │   └── vehicles/            # ~90 presets de veículo + vehicles/sounds/*.h (áudio em PROGMEM)
-├── referencia/Controller.ino # Sketch de origem do LAYOUT_CARLOS_BT_CAR (canal Arduino Para Modelismo)
+├── referencia/Controller.ino # Sketch de origem do profile carlos_bt_car (canal Arduino Para Modelismo)
 ├── data/                    # calibration.txt
 ├── hardware/                # PCBs (Gerber/STL) do controlador
 ├── tools/                   # Audio2Header.html / Header2Audio.html (conversores de som)

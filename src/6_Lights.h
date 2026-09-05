@@ -11,7 +11,12 @@
  */
 
 // Neopixel settings ----------------------------------------------------------------------------------------------------------------------------------------
-#define NEOPIXEL_ENABLED     // GPIO0 used for WS2812 Neopixel control, if defined! Always enabled, unless you have issues with the library!
+#ifndef PROFILE_NEOPIXEL
+#define PROFILE_NEOPIXEL 1   // a build profile sets 0 for boards without a WS2812 strip
+#endif
+#if PROFILE_NEOPIXEL
+#define NEOPIXEL_ENABLED     // GPIO0 used for WS2812 Neopixel control, if defined!
+#endif
 #if defined NEOPIXEL_ENABLED // only selectable, if NEOPIXELS are in use ---
 // #define NEOPIXEL_ON_CH4 // The CH 4 servo header is used as Neopixel output, if defined (BUS communication mode only, intended for RC trailer controller, no coupler servo)
 #endif                          // ---
@@ -31,7 +36,12 @@
 uint8_t neopixelMode = 2; // See above
 
 // These light settings are adjustabale during compile time only ---------------------------------------------------------------------------------------------
-#define THIRD_BRAKELIGHT // if defined, pin 32 is used for a third brake light, otherwise for a trailer presence switch (pulled to GND = no trailer attached)
+#ifndef PROFILE_THIRD_BRAKELIGHT
+#define PROFILE_THIRD_BRAKELIGHT 1 // a build profile sets 0 to free GPIO32 (e.g. for a 2-pin H-bridge)
+#endif
+#if PROFILE_THIRD_BRAKELIGHT
+#define THIRD_BRAKELIGHT // if defined, pin 32 is used for a third brake light, otherwise for a trailer presence switch
+#endif
 
 // These light options are adjustable on the configuration website and stored in the EEPROM -----------------------------------------------------------------
 bool noCabLights = false;                 // The cablights step in the lights sequence is skipped, if true

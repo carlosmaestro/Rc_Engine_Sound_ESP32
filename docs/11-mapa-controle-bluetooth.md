@@ -29,13 +29,16 @@ injetava em `currentThrottle` e acionava a ponte-H por conta própria) foi desca
 
 ## Como ligar
 
-1. `src/2_Remote.h`: descomente `#define BLUETOOTH_COMMUNICATION` e **comente** o modo
-   RC ativo (`IBUS_COMMUNICATION` etc.). É mutuamente exclusivo.
-2. `src/hardwareLayout.h`: selecione o layout da sua placa (ex. `LAYOUT_CARLOS_BT_CAR`).
-3. `pio run -t upload`, `pio device monitor` (115200).
-4. Coloque o controle em pareamento (DualShock/DualSense: PS + Share ~3 s até a lightbar
+1. Use um **build profile** com `#define BLUETOOTH_COMMUNICATION` — o `carlos_bt_car`
+   (`src/profiles/CarlosBtCar.h`) já vem assim. Ver [10 — Build profiles](10-profiles-de-build.md).
+2. `pio run -e carlos_bt_car -t upload`, `pio device monitor` (115200).
+3. Coloque o controle em pareamento (DualShock/DualSense: PS + Share ~3 s até a lightbar
    piscar duplo). O boot fica bloqueado (setas piscando 2×) até um controle conectar —
    comportamento igual ao "aguardando sinal RC" dos outros modos.
+
+Para um carro Bluetooth com outra pinagem/veículo: copie `CarlosBtCar.h`, mantenha
+`#define BLUETOOTH_COMMUNICATION`, ajuste pinos/tuning, e adicione o `[env]`
+correspondente (ver doc 10).
 
 ## Mapa gamepad → canal
 
