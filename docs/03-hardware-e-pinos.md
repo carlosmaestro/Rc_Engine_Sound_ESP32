@@ -1,9 +1,12 @@
 # 03 — Hardware e pinos
 
-Mapa de GPIO conforme os `#define` em `src/main.cpp` (bloco "PIN ASSIGNMENTS",
-linhas ~140–215). Vale para a placa padrão (30 pinos). O modo
-`#define WEMOS_D1_MINI_ESP32` (em `0_generalSettings.h`, **desativado** aqui) muda
-alguns pinos de luz.
+Mapa de GPIO da **placa padrão (30 pinos)**, conforme os `#define` no bloco
+"PIN ASSIGNMENTS" de `src/main.cpp` (linhas ~148–285, agora todos sob `#ifndef`).
+
+> A pinagem é selecionável por **layout de hardware** — ver
+> [10 — Layouts de hardware](10-layouts-de-hardware.md). `src/hardwareLayout.h` escolhe
+> `LAYOUT_STOCK_30PIN` (esta tabela), `LAYOUT_WEMOS_D1_MINI` ou `LAYOUT_CARLOS_BT_CAR`
+> (carro Bluetooth do usuário, pinos de `referencia/Controller.ino`).
 
 ## Entradas
 
@@ -76,20 +79,14 @@ vão para o LCD. Nesse caso **luzes laterais, os dois giroflex e o shaker não f
 (o `begin()` deles é pulado por `#if not defined SPI_DASHBOARD`). Parâmetros do LCD
 (driver ST7735, 80×160, pinos) são passados por `build_flags` no `platformio.ini`.
 
-### Conflitos introduzidos pela camada Bluetooth
+### Camada Bluetooth — sem conflito de pino
 
-`BluetoothController::processThrottle()` faz `ledcWrite(10, ...)`, `ledcWrite(11, ...)`
-e `digitalWrite(22, LOW/HIGH)` para acionar uma ponte-H de tração e uma luz de ré
-próprias. Na placa padrão:
-
-- canal LEDC **10** = giroflex 2 (`beaconLight2`, GPIO19)
-- canal LEDC **11** = 3ª luz de freio (`brakeLight`, GPIO32, ativa aqui)
-- GPIO **22** = `CABLIGHT_PIN` (luzes de cabine)
-
-Ou seja, essa parte do `BluetoothController` assume uma fiação/pinagem alternativa e
-**colide** com as luzes na configuração padrão. Trate-a como **experimental** e
-específica do hardware de quem escreveu o fork. Ver
-[04 — Entrada de controle](04-entrada-de-controle.md#camada-bluetooth-bluetoothcontroller).
+O PoC antigo (`BluetoothController.cpp`) acionava uma ponte-H própria via
+`ledcWrite(10/11)` + `digitalWrite(22)`, colidindo com giroflex 2 / 3ª luz de freio /
+luzes de cabine. **Foi removido.** O modo Bluetooth atual
+([11 — Controle Bluetooth](11-mapa-controle-bluetooth.md)) é um *receptor virtual*: só
+sintetiza `pulseWidth[]`; a tração sai pelo caminho normal do `esc()` (MCPWM). Nenhum
+pino a mais é usado além dos do layout selecionado.
 
 ## Alimentação e proteção de bateria
 

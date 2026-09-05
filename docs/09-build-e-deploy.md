@@ -26,9 +26,10 @@ upload_speed      = 921600              ; baixe p/ 115200 se der erro de upload
 ```
 
 > **Ponto crítico do fork:** `platform_packages` substitui o framework Arduino-ESP32
-> padrão pelo fork **`pio-framework-bluepad32`** do `maxgerhardt`. É isso que fornece
-> `<Bluepad32.h>` e a pilha BT-HID que o `BluetoothController` usa. Sem essa linha, o
-> build quebra em `BluetoothController.cpp`.
+> padrão pelo fork **`pio-framework-bluepad32`** do `maxgerhardt`, que empacota
+> arduino-esp32 2.0.17, IDF 4.4, Bluepad32 4.1.0 e BTstack. É isso que fornece `<Bluepad32.h>` e a pilha
+> BT-Classic HID. Sem essa linha, o build quebra em `src/input/BluetoothInput.cpp`.
+> Vale fixar num commit (`.../archive/e010351b...zip`) em vez de `main.zip` (alvo móvel).
 
 ### `build_flags` — dashboard TFT_eSPI
 
@@ -88,26 +89,42 @@ flowchart LR
     F --> G["Parear controle PS4/PS5\n(controle em modo pairing)"]
 ```
 
+## Escolher a configuração (3 seletores)
+
+| Seletor | Arquivo | Opções |
+|---|---|---|
+| Veículo | `1_Vehicle.h` | um `#include vehicles/*.h` (padrão: `VolvoL120H.h`) |
+| Modo de comunicação | `2_Remote.h` | um de `BLUETOOTH_COMMUNICATION` / `IBUS_COMMUNICATION` / `SBUS_COMMUNICATION` / ... (padrão do repo: IBUS) |
+| Layout de pinos | `hardwareLayout.h` | `LAYOUT_STOCK_30PIN` (padrão) / `LAYOUT_WEMOS_D1_MINI` / `LAYOUT_CARLOS_BT_CAR` — ver [doc 10](10-layouts-de-hardware.md) |
+
+**Carro Bluetooth (`LAYOUT_CARLOS_BT_CAR`):** em `2_Remote.h`, descomentar
+`#define BLUETOOTH_COMMUNICATION` e comentar `#define IBUS_COMMUNICATION`; em
+`hardwareLayout.h`, selecionar `#define LAYOUT_CARLOS_BT_CAR`. Ver
+[doc 11](11-mapa-controle-bluetooth.md).
+
 ## Checklist de primeira gravação
 
 1. `board_build.f_cpu = 240000000L` (não mexer).
-2. Conferir o veículo em `1_Vehicle.h` e o par **protocolo + perfil** em `2_Remote.h`.
-3. Calibrar o divisor de bateria em `3_ESC.h` (`RESISTOR_*`, `DIODE_DROP`) comparando
-   com o multímetro.
+2. Conferir os 3 seletores acima.
+3. **Modo RC:** calibrar o divisor de bateria em `3_ESC.h` (`RESISTOR_*`, `DIODE_DROP`).
+   **`LAYOUT_CARLOS_BT_CAR`:** sem divisor, `BATTERY_PROTECTION` já vem desligado no layout.
 4. Se trocou configuração e quer resetar a EEPROM, incrementar `eeprom_id` em
    `0_generalSettings.h`.
-5. Gravar, abrir o monitor, ligar o rádio/receptor — as setas piscam durante a
-   inicialização do BUS; erro de sinal = 3 flashes rápidos; erro de bateria = 2 flashes.
-6. Colocar o controle Bluetooth em modo de pareamento no primeiro uso
-   (`forgetBluetoothKeys()` roda a cada boot).
+5. Gravar, abrir o monitor:
+   - **Modo RC:** ligar o rádio/receptor; setas piscam 3× na init do BUS; erro de sinal
+     = 3 flashes, erro de bateria = 2 flashes.
+   - **Modo Bluetooth:** o boot fica bloqueado (setas piscando 2×) até um controle
+     conectar; ponha o DualShock/DualSense em pareamento (PS + Share). Serial mostra
+     `Bluepad32 firmware ...` → `controller connected, slot 0` → `RZ7886 motor driver mode configured`.
+6. `forgetBluetoothKeys()` **não** é mais chamado no boot — o pareamento persiste.
 
 ## Notas
 
 - **Sem OTA** — a partição `huge_app.csv` usa todo o espaço para o app + arrays de som.
-- `src/src copy.txt` e `src/main.cpp` guardam versões quase idênticas; o build usa
-  `src/main.cpp`. `src/vehicles/FreightlinerCummins350 2.h` e afins são duplicatas
-  com espaço no nome — inofensivas, mas evite referenciá-las.
-- O diretório `build/` na raiz e `src/build/` são resíduos; o output real do PlatformIO
-  vai para `.pio/build/esp32dev/`.
-- O `.git` deste checkout está com packfile corrompido (`bad object HEAD`); recrie o
-  clone se precisar de histórico/branches.
+- Tamanhos de build de referência: `LAYOUT_STOCK_30PIN` + IBUS ≈ Flash 42.2% / RAM 31%;
+  `LAYOUT_CARLOS_BT_CAR` + `BLUETOOTH_COMMUNICATION` ≈ Flash 39.8% / RAM 30.8%.
+- `src/src copy.txt` é backup local (gitignored). O output do PlatformIO vai para
+  `.pio/build/esp32dev/`; `build/` na raiz e `src/build/` são resíduos.
+- Sobre o upgrade para arduino-esp32 3.x / IDF 5.x: **adiado** — não há caminho
+  `framework=arduino` + Bluepad32 no core 3.x (seria `framework=espidf` + Arduino-como-
+  componente). Fica como projeto separado.

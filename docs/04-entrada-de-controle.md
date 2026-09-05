@@ -1,10 +1,14 @@
 # 04 — Entrada de controle
 
-Há duas fontes de comando que convergem para as mesmas variáveis internas
-(`pulseWidth[]`, `currentThrottle`, flags de função):
+Há duas fontes de comando, **mutuamente exclusivas** (escolhidas por `#define` em
+`2_Remote.h`), e ambas produzem o mesmo `pulseWidth[1..13]` em µs:
 
-1. **Receptor RC** — um de cinco protocolos, selecionado por `#define` em `2_Remote.h`.
-2. **Joystick Bluetooth** — `src/BluetoothController.cpp` (Bluepad32), específico deste fork.
+1. **Receptor RC** — um de cinco protocolos (PWM / SBUS / IBUS / SUMD / PPM).
+2. **Joystick Bluetooth** — `#define BLUETOOTH_COMMUNICATION`. Um *receptor virtual*
+   (`src/input/BluetoothInput.cpp`, Bluepad32) sintetiza os canais a partir de um
+   gamepad PS4/PS5. Documentado em [11 — Controle Bluetooth](11-mapa-controle-bluetooth.md).
+   A seção "Camada Bluetooth (`BluetoothController`)" abaixo descreve o **PoC antigo, já
+   removido** — mantida só como histórico.
 
 ## Pipeline do receptor RC
 
@@ -35,9 +39,10 @@ flowchart TB
 
 Pontos-chave:
 
-- **Protocolo ativo neste checkout:** `IBUS_COMMUNICATION` (`2_Remote.h` linha 34).
-  `SBUS_COMMUNICATION` está comentado. Em `setup()` e `loop()` a escolha é uma cadeia
-  `#if defined SBUS_COMMUNICATION / #elif defined IBUS_COMMUNICATION / ... / #else PWM`.
+- **Modo de comunicação:** selecionado em `2_Remote.h`. Padrão do repo: `IBUS_COMMUNICATION`
+  (para a L120H com rádio real). Para o carro Bluetooth: `BLUETOOTH_COMMUNICATION`. Em
+  `setup()` e `loop()` a escolha é uma cadeia
+  `#if defined BLUETOOTH_COMMUNICATION / #elif defined SBUS_COMMUNICATION / #elif IBUS / ... / #else PWM`.
 - **`EMBEDDED_SBUS`** (definido) usa `src/sbus.cpp` em vez da biblioteca externa —
   recomendado pelo upstream.
 - Todos os modos BUS compartilham **`COMMAND_RX = GPIO36`** e o `Serial2`.
@@ -89,12 +94,12 @@ Executa no `loop()` sob `xRpmSemaphore`. Ramo escolhido por `#if`:
 | `TRACKED_MODE` | maior valor entre CH2 e CH3 (mistura de lagartas) |
 | `EXCAVATOR_MODE` | CH3 (só para frente), com abaixamento de RPM após 5 s sem hidráulica |
 | `AIRPLANE_MODE` | CH3 acima de 1100 µs, embreagem sempre solta |
-| **Normal** (ativo) | `currentThrottle = getBLTCurrentThrottle();` — **vem do joystick Bluetooth** |
+| **Normal** (ativo) | `map(pulseWidth[3], pulseMaxNeutral[3]..pulseMax[3], 0..500)` para frente; simétrico para ré; 0 na zona neutra |
 
-> No fork, o ramo "normal" foi alterado: em vez de mapear `pulseWidth[3]` para 0..500,
-> ele pega o valor calculado pelo `BluetoothController`. O `if` externo ainda exige que
-> `pulseWidth[3]` pareça um pulso de servo válido, então **o receptor RC ainda precisa
-> estar presente e centrado** para o acelerador Bluetooth ter efeito.
+> O ramo "normal" foi **restaurado ao mapeamento stock** (o fork antigo injetava
+> `getBLTCurrentThrottle()` aqui). Em modo Bluetooth, `pulseWidth[3]` já é o acelerador
+> sintetizado pelo receptor virtual — nenhum receptor RC físico é necessário. Ver
+> [11 — Controle Bluetooth](11-mapa-controle-bluetooth.md).
 
 Depois do valor bruto, `mapThrottle()` também:
 
@@ -104,10 +109,15 @@ Depois do valor bruto, `mapThrottle()` também:
   turbo, ventoinha, compressor, wastegate, tire squeal) — consumidos pelo motor de som;
 - calcula `engineLoad = currentThrottle - currentRpm` (0..180) para o conversor de torque.
 
-## Camada Bluetooth (`BluetoothController`)
+## Camada Bluetooth (`BluetoothController`) — HISTÓRICO (removido)
 
-Arquivos: `src/BluetoothController.h`, `src/BluetoothController.cpp`. Depende de
-`<Bluepad32.h>`, que só existe porque o `platformio.ini` troca o pacote do framework
+> Esta seção descreve o **PoC original**, deletado no commit `fefe8fd`. A implementação
+> atual — receptor virtual, sem acionar hardware direto, sem furar a abstração
+> `pulseWidth[]` — está em [11 — Controle Bluetooth](11-mapa-controle-bluetooth.md).
+> O texto abaixo fica só como registro do que foi descartado e por quê.
+
+Arquivos (removidos): `src/BluetoothController.h`, `src/BluetoothController.cpp`. Dependia
+de `<Bluepad32.h>`, que só existe porque o `platformio.ini` troca o pacote do framework
 Arduino pelo fork **`pio-framework-bluepad32`**.
 
 ```mermaid

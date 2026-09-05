@@ -1,9 +1,11 @@
 # 02 — Arquitetura
 
-Todo o firmware está em um único arquivo, `src/main.cpp` (~5.700 linhas). Os arquivos
-`0_*.h` .. `10_*.h` e `vehicles/*.h` são **incluídos** por `main.cpp` e contêm apenas
-`#define`s e variáveis de configuração — não há classes de módulo. `main.h` só traz as
-_forward declarations_ para permitir a inclusão do `BluetoothController.cpp` separado.
+Quase todo o firmware está em `src/main.cpp` (~5.700 linhas). Os arquivos `0_*.h` ..
+`10_*.h`, `hardwareLayout.h`, `BluetoothMapping.h` e `vehicles/*.h` são **incluídos**
+por `main.cpp` e contêm só `#define`s / variáveis de configuração. Os únicos `.cpp`
+separados são `src/input/BluetoothInput.cpp` (receptor virtual Bluetooth) e os
+auxiliares em `src/src/` (`SUMD.cpp`, `sbus.cpp`, `dashboard.cpp`). `main.h` traz as
+_forward declarations_ que esses `.cpp` precisam.
 
 ## Camadas lógicas
 
@@ -68,8 +70,7 @@ flowchart LR
 
     subgraph CORE1["Núcleo 1 — loop() do Arduino"]
         direction TB
-        B0["loopBluetoothController()  (poll BP32 a cada 50 ms)"]
-        B1["readXxxCommands()  (protocolo RC ativo)"]
+        B1["readXxxCommands() / readBluetoothCommands()  (modo de comunicação ativo)"]
         B2["mcpwmOutput()  (servos, em modo BUS)"]
         B3["triggerHorn() / triggerIndicators()"]
         B4["mapThrottle() + rcTriggerRead()  (mutex xRpmSemaphore)"]
@@ -78,7 +79,7 @@ flowchart LR
         B7["trailerControl()  (ESP-NOW)"]
         B8["webInterface() / serialInterface()"]
         B9["rtc_wdt_feed()"]
-        B0-->B1-->B2-->B3-->B4-->B5-->B6-->B7-->B8-->B9-->B0
+        B1-->B2-->B3-->B4-->B5-->B6-->B7-->B8-->B9-->B1
     end
 
     subgraph ISR["Interrupções de hardware (executam no núcleo 0)"]
@@ -122,12 +123,12 @@ sequenceDiagram
     S->>S: begin() de cada statusLED (faróis, setas, shaker...) em canais LEDC 2..15
     S->>S: setupEspNow()
     S->>S: setupNeopixel()  (FastLED, se NEOPIXEL_ENABLED)
-    S->>S: seleção de protocolo RC (SBUS/IBUS/PPM/SUMD/PWM) + setupMcpwm()
-    S->>S: setupBluetoothController()  (Bluepad32)
+    S->>S: seleção do modo de comunicação (BLUETOOTH/SBUS/IBUS/PPM/SUMD/PWM) + setupMcpwm()
+    Note over S: se BLUETOOTH_COMMUNICATION: setupBluetoothInput() (callbacks BP32)
     S->>S: xTaskCreatePinnedToCore(Task1code, core 0)
     S->>S: dacWrite(DAC1/DAC2, 0)
     S->>S: timerBegin(0) -> variablePlaybackTimer ; timerBegin(1) -> fixedPlaybackTimer
-    S->>S: espera receptor RC inicializar (loop de flash nas setas)
+    S->>S: espera o receptor RC / o gamepad conectar (loop de flash nas setas)
     S->>S: calcula faixas de pulso por canal (pulseZero=1500 +/- pulseSpan)
     S->>S: setupMcpwmESC()
 ```

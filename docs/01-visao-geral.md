@@ -27,25 +27,32 @@ Gamadril (dashboard, Neopixel, SUMD), Christian Fiebig.
 
 ## O que esta branch (`ps4-5-bluetooth`) acrescenta
 
-Um módulo novo — **`src/BluetoothController.cpp` / `.h`** — que usa **Bluepad32** para
-parear um controle **DualShock 4 / DualSense (PS4/PS5)** e usá-lo como fonte de comando
-no lugar (ou além) do receptor RC.
+Duas features, mais um snapshot de trabalho pré-existente do fork:
 
-Pontos de integração com o código upstream:
+1. **Sistema de layouts de hardware** (`src/hardwareLayout.h`) — seletor de pinagem por
+   placa, no estilo dos perfis de rádio. Ver [10 — Layouts de hardware](10-layouts-de-hardware.md).
+2. **Controle Bluetooth como receptor virtual** (`src/input/BluetoothInput.cpp`,
+   `src/BluetoothMapping.h`) — pareia um **DualShock 4 / DualSense (PS4/PS5)** via
+   **Bluepad32** e *sintetiza* `pulseWidth[1..13]`, entregando ao pipeline normal
+   (`processRawChannels` → `mapThrottle` / `esc` / `led` / servos, tudo inalterado).
+   Ativado por `#define BLUETOOTH_COMMUNICATION` em `2_Remote.h`. Ver
+   [11 — Controle Bluetooth](11-mapa-controle-bluetooth.md).
+
+O PoC anterior — `src/BluetoothController.cpp` — foi **removido** (commit `fefe8fd`): ele
+furava a abstração (injetava em `currentThrottle`) e acionava uma ponte-H própria via
+`ledcWrite`, colidindo com os canais LEDC das luzes.
+
+Integração com o upstream:
 
 | Local | Alteração |
 |-------|-----------|
-| `platformio.ini` | `platform_packages` aponta para o fork `pio-framework-bluepad32` do Arduino-ESP32 (necessário para o Bluepad32 substituir a pilha BT-HID) |
-| `src/main.cpp` (topo) | `#include "BluetoothController.h"` |
-| `setup()` | chama `setupBluetoothController()` (registra callbacks BP32, esquece chaves BT) |
-| `loop()` | primeira chamada é `loopBluetoothController()` (poll a cada 50 ms) |
-| `mapThrottle()` (modo normal) | `currentThrottle = getBLTCurrentThrottle();` — o acelerador do firmware passa a vir do joystick |
-| `processGamepad()` | botão **A** → `engineOnOff()` + cor do LED do controle; **X** → `triggerHorn()` + rumble; **B** → LEDs de "player" |
+| `platformio.ini` | `platform_packages` → fork `pio-framework-bluepad32` (arduino-esp32 2.0.17 + Bluepad32 4.1.0 + BTstack) |
+| `src/main.cpp` | `#include "hardwareLayout.h"` (após os headers 0..10); bloco de pinos sob `#ifndef`; ramo `BLUETOOTH_COMMUNICATION` nas cadeias de `setup()`/`loop()`/wait-loop |
+| `src/2_Remote.h` | `#define BLUETOOTH_COMMUNICATION` no seletor de modo (comentado por padrão) |
+| `src/input/BluetoothInput.cpp` | `readBluetoothCommands()` — poll BP32, sintetiza canais, failsafe por timeout de 500 ms |
 
-O `BluetoothController` também aciona **diretamente** uma ponte-H de tração
-(`ledcWrite(10/11, ...)`) e uma luz de ré (`digitalWrite(22, ...)`) a partir do eixo Y
-do analógico direito (`axisRY`) ou do gatilho R2 (`throttle()`, quando `manualMode`).
-Ver detalhes e ressalvas em [04 — Entrada de controle](04-entrada-de-controle.md#camada-bluetooth-bluetoothcontroller).
+> **Upgrade do core (arduino-esp32 3.x / IDF 5.x): adiado.** Não há caminho
+> `framework=arduino` + Bluepad32 no core 3.x. Fica como projeto separado.
 
 ## Configuração atual do checkout
 

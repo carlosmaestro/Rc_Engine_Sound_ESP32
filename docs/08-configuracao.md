@@ -19,15 +19,21 @@ flowchart TB
     M --> SD["8_Sound.h  (volume mestre global)"]
     M --> D["9_Dashboard.h  (LCD ST7735)"]
     M --> TR["10_Trailer.h  (MACs ESP-NOW)"]
-    M --> AUX["src/curves.h, helper.h, dashboard.h, SUMD.h, sbus.h,\nwebInterface.h, serialInterface.h"]
+    M --> HL["hardwareLayout.h  (POR ÚLTIMO — seletor de pinos, pode #undef/#define toggles)"]
+    M --> AUX["src/curves.h, helper.h, dashboard.h, SUMD.h, sbus.h,\nwebInterface.h, serialInterface.h, input/BluetoothInput.h"]
 ```
+
+> `hardwareLayout.h` é incluído **depois** de `0_`..`10_` de propósito — ver
+> [10 — Layouts de hardware](10-layouts-de-hardware.md).
 
 ## Cabeçalhos globais
 
 | Arquivo | Principais chaves |
 |---------|-------------------|
 | `0_generalSettings.h` | `WEMOS_D1_MINI_ESP32` (off), flags de `DEBUG`, `eeprom_id = 5`, `ENABLE_WIRELESS` (**off**), `cpType = WIFI_POWER_7dBm`, `default_ssid = "My_Truck"`, `default_password = "123456789"`, `USE_CSS`/`MODERN_CSS` |
-| `2_Remote.h` | perfil de rádio (`FLYSKY_FS_I6S_LOADER`), protocolo (`IBUS_COMMUNICATION`), `EMBEDDED_SBUS`, `sbusBaud`, `sbusFailsafeTimeout`, `EXPONENTIAL_THROTTLE`, `CHANNEL_AVERAGING` (off), tabelas `channelReversed[]`/`channelAutoZero[]`, `pulseNeutral`/`pulseSpan` |
+| `2_Remote.h` | perfil de rádio (`FLYSKY_FS_I6S_LOADER`); **modo de comunicação**: `IBUS_COMMUNICATION` (padrão) ou `BLUETOOTH_COMMUNICATION` (carro BT, ver [doc 11](11-mapa-controle-bluetooth.md)); `EMBEDDED_SBUS`, `EXPONENTIAL_THROTTLE`, `CHANNEL_AVERAGING` (off), `channelReversed[]`/`channelAutoZero[]`, `pulseNeutral`/`pulseSpan` |
+| `hardwareLayout.h` | **layout de pinos**: `LAYOUT_STOCK_30PIN` (padrão) / `LAYOUT_WEMOS_D1_MINI` / `LAYOUT_CARLOS_BT_CAR`. Ver [doc 10](10-layouts-de-hardware.md) |
+| `BluetoothMapping.h` | mapa gamepad→canal + tuning do modo Bluetooth. Ver [doc 11](11-mapa-controle-bluetooth.md) |
 | `3_ESC.h` | `QUICRUN_FUSION`/`ESC_DIR` (off), `RZ7886_DRIVER_MODE` (off), `brakeMargin=10`, `escPulseSpan=600`, `escTakeoffPunch=0`, `escReversePlus=0`, `crawlerEscRampTime=10`, `globalAccelerationPercentage=100`, **`BATTERY_PROTECTION`** + calibração do divisor + `#include OutOfFuelEnglish.h` |
 | `4_Transmission.h` | `VIRTUAL_3_SPEED`, `TRANSMISSION_NEUTRAL`, `maxClutchSlippingRpm=250`, `lowRangePercentage=58`, `automaticReverseAccelerationPercentage=100`; off: `SEMI_AUTOMATIC`, `MODE1_SHIFTING`, `DOUBLE_CLUTCH`, `OVERDRIVE`, `HIGH_SLIPPINGPOINT`, `VIRTUAL_16_SPEED_SEQUENTIAL` |
 | `5_Shaker.h` | `GT_POWER_STOCK`, `shakerStart/Idle/FullThrottle/Stop` |
@@ -95,4 +101,5 @@ Flags em `0_generalSettings.h` (podem deixar o loop de áudio lento — só para
 `DEBUG`, `CHANNEL_DEBUG`, `ESC_DEBUG`, `AUTO_TRANS_DEBUG`, `MANUAL_TRANS_DEBUG`,
 `TRACKED_DEBUG`, `SERVO_DEBUG`, `ESPNOW_DEBUG`. O monitor serial (115200) também mostra:
 versão, clocks, RAM livre, MAC, motivo do reset, calibração de bateria/ESC, offsets de
-canal, e (do `BluetoothController`) firmware do Bluepad32, BD Addr e eventos de conexão.
+canal, e (em modo Bluetooth, de `BluetoothInput`) firmware do Bluepad32, BD Addr e
+eventos de conexão do controle.
