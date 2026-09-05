@@ -1,5 +1,4 @@
 #include "main.h"
-#include "BluetoothController.h"
 #include <cstdint>
 /* RC engine sound & light controller for Arduino ESP32. Written by TheDIYGuy999
     Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
@@ -103,6 +102,9 @@ char codeVersion[] = "9.13.0"; // Software revision.
 #include "src/SUMD.h"      // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 #if defined EMBEDDED_SBUS
 #include "src/sbus.h" // For SBUS interface
+#endif
+#if defined BLUETOOTH_COMMUNICATION
+#include "input/BluetoothInput.h" // Bluetooth gamepad "virtual receiver"
 #endif
 
 // No need to install these, they come with the ESP32 board definition
@@ -1908,7 +1910,13 @@ void setup() {
     indicatorL.on();
     indicatorR.on();
 
-#if defined SBUS_COMMUNICATION // SBUS ----
+#if defined BLUETOOTH_COMMUNICATION // Bluetooth gamepad "virtual receiver" ----
+    if (MAX_RPM_PERCENTAGE > maxIbusRpmPercentage)
+        MAX_RPM_PERCENTAGE = maxIbusRpmPercentage; // Limit RPM range (same cap as IBUS, conservative)
+    setupBluetoothInput();
+    setupMcpwm(); // mcpwm servo output setup (steering on CH1)
+
+#elif defined SBUS_COMMUNICATION // SBUS ----
     if (MAX_RPM_PERCENTAGE > maxSbusRpmPercentage)
         MAX_RPM_PERCENTAGE = maxSbusRpmPercentage; // Limit RPM range
     sBus.begin(COMMAND_RX, COMMAND_TX, sbusInverted, sbusBaud); // begin SBUS communication with compatible receivers
@@ -1974,8 +1982,7 @@ void setup() {
     timelast = micros();
     timelastloop = timelast;
 
-    // Setup Bluetooth Controller
-    setupBluetoothController();
+    // (Bluetooth gamepad, if BLUETOOTH_COMMUNICATION, was set up in the communication block above)
 
     // Task 1 setup (running on core 0)
     TaskHandle_t Task1;
@@ -2013,7 +2020,20 @@ void setup() {
     while (millis() <= 1000);
 
     // Read RC signals for the first time (used for offset calculations)
-#if defined SBUS_COMMUNICATION
+#if defined BLUETOOTH_COMMUNICATION
+    Serial.printf("Initializing Bluetooth gamepad ...\n");
+    Serial.printf("(Put the controller in pairing mode. It will connect within a few seconds.)\n");
+    while (!bluetoothInputReady()) {
+        readBluetoothCommands();
+        indicatorL.flash(70, 75, 500, 2); // 2 fast flashes = waiting for gamepad
+        indicatorR.flash(70, 75, 500, 2);
+        serialInterface();
+        webInterface();
+        rtc_wdt_feed(); // Feed watchdog timer
+    }
+    Serial.printf("... Bluetooth gamepad connected!\n");
+
+#elif defined SBUS_COMMUNICATION
     sbusInit = false;
     Serial.printf("Initializing SBUS (sbusInverted = %s, needs to be true for most standard radios) ...\n",
                   sbusInverted ? "true" : "false");
@@ -3213,16 +3233,14 @@ void mapThrottle() {
             pulseWidth[3] = pulseMin[3]; // Constrain the value
         if (pulseWidth[3] > pulseMax[3])
             pulseWidth[3] = pulseMax[3];
-        // TODO
         // calculate a throttle value from the pulsewidth signal
-        // if (pulseWidth[3] > pulseMaxNeutral[3]) {
-        //     currentThrottle = map(pulseWidth[3], pulseMaxNeutral[3], pulseMax[3], 0, 500);
-        // } else if (pulseWidth[3] < pulseMinNeutral[3]) {
-        //     currentThrottle = map(pulseWidth[3], pulseMinNeutral[3], pulseMin[3], 0, 500);
-        // } else {
-        //     currentThrottle = 0;
-        // }
-        currentThrottle =getBLTCurrentThrottle();
+        if (pulseWidth[3] > pulseMaxNeutral[3]) {
+            currentThrottle = map(pulseWidth[3], pulseMaxNeutral[3], pulseMax[3], 0, 500);
+        } else if (pulseWidth[3] < pulseMinNeutral[3]) {
+            currentThrottle = map(pulseWidth[3], pulseMinNeutral[3], pulseMin[3], 0, 500);
+        } else {
+            currentThrottle = 0;
+        }
     }
 #endif
 
@@ -5632,9 +5650,11 @@ void trailerControl() {
 //
 
 void loop() {
-    loopBluetoothController();
+#if defined BLUETOOTH_COMMUNICATION
+    readBluetoothCommands(); // Bluetooth gamepad -> synthesized RC channels
+    mcpwmOutput(); // PWM servo signal output (steering)
 
-#if defined SBUS_COMMUNICATION
+#elif defined SBUS_COMMUNICATION
     readSbusCommands(); // SBUS communication (pin 36)
     mcpwmOutput(); // PWM servo signal output
 

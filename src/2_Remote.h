@@ -21,7 +21,12 @@
 // Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
 // PWM servo signal communication (CH1 - CH6 headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, SUMD and PPM are disabled (// in front of #define)
+// PWM mode active, if SBUS, IBUS, SUMD, PPM and BLUETOOTH are disabled (// in front of #define)
+
+// Bluetooth gamepad "virtual receiver" (PS4 / PS5 / Xbox / Switch via Bluepad32) --------
+// Synthesizes the RC channels from a game controller. No physical receiver needed.
+// Overrides SBUS/IBUS/SUMD/PPM/PWM. Mapping is in "BluetoothMapping.h". Needs the pio-framework-bluepad32 build.
+// #define BLUETOOTH_COMMUNICATION
 
 // SBUS communication (RX header, 13 channels. This is my preferred communication protocol)--------
 // #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
