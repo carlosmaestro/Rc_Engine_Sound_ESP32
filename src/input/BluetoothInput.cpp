@@ -18,9 +18,12 @@ extern volatile int16_t masterVolume;      // applied value (%), also re-applied
 extern int8_t lightsState;                 // light-stage state machine (0..5), read by led()
 extern volatile bool headLightsHighBeamOn; // high/low beam, read by led()
 
-// --- Bluepad32 D-pad bit values (from uni_gamepad.h: UP=0, DOWN=1, RIGHT=2, LEFT=3) ---
-static const uint8_t BT_DPAD_UP = 0x01;
-static const uint8_t BT_DPAD_DOWN = 0x02;
+// --- Bluepad32 D-pad bit values ---
+// Nominal (uni_gamepad.h): UP=BIT0(0x01), DOWN=BIT1(0x02), RIGHT=BIT2(0x04), LEFT=BIT3(0x08).
+// On the user's controller UP/DOWN arrive swapped (down-arrow was raising the volume), so the
+// UP/DOWN bits are swapped here to match the printed labels. LEFT/RIGHT left as nominal.
+static const uint8_t BT_DPAD_UP = 0x02;
+static const uint8_t BT_DPAD_DOWN = 0x01;
 static const uint8_t BT_DPAD_RIGHT = 0x04;
 static const uint8_t BT_DPAD_LEFT = 0x08;
 

@@ -64,17 +64,25 @@ mapeamento frágil.
 |---|---|---|
 | **D-pad ↑** | `volumeIndex` ++ (limite `numberOfVolumeSteps-1`) | volume + · aplica `masterVolume = masterVolumePercentage[volumeIndex]` |
 | **D-pad ↓** | `volumeIndex` −− (limite 0) | volume − |
+
+> **Direcionais invertidos neste controle:** o gamepad do usuário entrega os bits de
+> ↑/↓ trocados (a seta para baixo subia o volume). `BluetoothInput.cpp` troca
+> `BT_DPAD_UP`/`BT_DPAD_DOWN` (0x02/0x01) para bater com o rótulo. ←/→ ficaram nominais.
+
+**Passos de volume** (`src/8_Sound.h`, `masterVolumePercentage[]`): agora **8** —
+`{100, 88, 75, 66, 55, 44, 22, 0}` (era `{100, 66, 44, 0}`). Resolução mais fina na
+faixa audível (100…55) antes de o crawler entrar. Vale para o CH5 dos modos RC também.
 | **D-pad →** | `lightsState = (>=5) ? 0 : +1` | cicla os 6 estágios de luz (apagado → meia-luz → baixo → neblina → tudo) |
 | **D-pad ←** | `headLightsHighBeamOn = !` | farol alto on/off (só visível com farol ligado, estágio ≥ 3; `led()` zera se não houver farol) |
 | **PS** segurado ~2 s | — | `BP32.forgetBluetoothKeys()` + `ESP.restart()` (re-parear) |
 
 Detecção por **borda de subida** do `dpad()` (`s_prevDpad`) — pressionar dispara uma vez.
 
-> **Acoplamento volume ↔ pilotagem:** `masterVolumePercentage[] = {100, 66, 44, 0}`.
-> Passos 2 (44 %) e 3 (mudo) têm `masterVolume ≤ masterVolumeCrawlerThreshold` (44) → o
-> `esc()` liga o **crawler mode** (controle direto, sem inércia virtual). Ou seja, baixar o
-> volume até "silêncio/mudo" também deixa a pilotagem 1:1. Um toggle dedicado de "controle
-> direto" (R3, desacoplado do volume) fica para a Fase 4c.
+> **Acoplamento volume ↔ pilotagem:** `masterVolumePercentage[] = {100, 88, 75, 66, 55, 44, 22, 0}`.
+> Os passos de índice ≥ 5 (44 %, 22 %, mudo) têm `masterVolume ≤ masterVolumeCrawlerThreshold`
+> (44) → o `esc()` liga o **crawler mode** (controle direto, sem inércia virtual). Ou seja,
+> baixar o volume até "silêncio/mudo" também deixa a pilotagem 1:1. Um toggle dedicado de
+> "controle direto" (R3, desacoplado do volume) fica para a Fase 4c.
 
 ### Fase 4c (a fazer)
 
@@ -128,7 +136,7 @@ Knobs para um carro ágil:
 | `3_ESC.h` | `globalAccelerationPercentage` (divide `escRampTime`) | 100 | 150 |
 | `3_ESC.h` | `crawlerEscRampTime` (modo crawler = controle quase direto) | 10 | — |
 
-Atalho: `masterVolume ≤ 44` (passo de volume mais baixo) liga o **modo crawler**
+Atalho: `masterVolume ≤ 44` (os 3 passos de volume mais baixos) liga o **modo crawler**
 (`escRampTime = crawlerEscRampTime`, quase sem inércia virtual).
 
 A **buzina** em si não tem atraso na lógica (`triggerHorn()` dispara no mesmo ciclo);

@@ -17,7 +17,8 @@
  *   Cross (X/A) .............. CH10  liga/desliga motor (via momentary1Trigger.toggleLong do rcTriggerRead)
  *
  * FASE 4b - controles de "experiencia" (aplicados DIRETO nas globais do firmware, sem fingir canal):
- *   D-pad cima / baixo ......... volume + / -   (volumeIndex 0..numberOfVolumeSteps-1, sem wrap)
+ *   D-pad cima / baixo ......... volume + / -   (volumeIndex 0..numberOfVolumeSteps-1, sem wrap; 8 passos)
+ *     NOTA: neste controle os bits de cima/baixo vem trocados -> BT_DPAD_UP/DOWN invertidos em BluetoothInput.cpp.
  *   D-pad direita ............. cicla estagio de luz  (lightsState 0..5)
  *   D-pad esquerda ........... farol alto on/off  (headLightsHighBeamOn)
  *   PS segurado ~2 s ......... esquece pareamentos + reinicia (re-parear)

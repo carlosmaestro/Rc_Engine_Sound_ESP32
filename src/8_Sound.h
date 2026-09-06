@@ -13,8 +13,8 @@
 // const  uint8_t numberOfVolumeSteps = 3; // The mumber of volume steps below
 // const uint8_t masterVolumePercentage[] = {100, 66, 44}; // loud, medium, silent (more than 100% may cause distortions)
 
-const uint8_t numberOfVolumeSteps = 4;                     // The mumber of volume steps below
-const uint8_t masterVolumePercentage[] = {100, 66, 44, 0}; // loud, medium, silent, no sound (more than 100% may cause distortions)
+const uint8_t numberOfVolumeSteps = 8;                                        // The number of volume steps below
+const uint8_t masterVolumePercentage[] = {100, 88, 75, 66, 55, 44, 22, 0};    // finer resolution: 100..55 audible, 44 and below engage crawler mode (see threshold). (more than 100% may cause distortions)
 
 // Crawler mode
 const uint8_t masterVolumeCrawlerThreshold = 44; // If master volume is <= this threshold, crawler mode (without virtual inertia) is active
