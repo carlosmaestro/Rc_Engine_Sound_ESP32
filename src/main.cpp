@@ -506,6 +506,7 @@ volatile uint16_t hydraulicLoad = 0; // Hydraulic load dependent RPM drop
 volatile uint64_t dacDebug = 0; // DAC debug variable TODO
 
 volatile int16_t masterVolume = 100; // Master volume percentage
+uint8_t volumeIndex = 0; // index into masterVolumePercentage[] (was a static in rcTriggerRead(); global so BluetoothInput can adjust it)
 volatile uint8_t dacOffset = 0; // 128, but needs to be ramped up slowly to prevent popping noise, if switched on
 
 // // Throttle
@@ -4834,8 +4835,8 @@ void rcTriggerRead() {
 #endif
 
     // Volume adjustment, if vehicle standing still and dual rate @100%
+    // (volumeIndex is now a global in main.cpp so the Bluetooth D-pad can adjust it too)
     static bool volumeStateLock;
-    static uint8_t volumeIndex = 0;
     if (driveState == 0) {
         if (functionR100d.toggleLong(pulseWidth[5], 2000) != volumeStateLock) {
             if (volumeIndex < numberOfVolumeSteps - 1)

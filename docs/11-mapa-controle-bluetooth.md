@@ -52,24 +52,38 @@ correspondente (ver doc 10).
 | **R1** / **L1** | CH2 `GEARBOX` | Marcha +/− (estado interno 1..3 → 1000/1500/2000 µs). Borda de subida |
 | **Quadrado** (`x()`) | CH4 `HORN` | Buzina (momentâneo → 1980 µs; `> 1900` dispara `hornTrigger`) |
 | **X / Cross** (`a()`) | CH10 `MOMENTARY1` | Liga/desliga motor. Segurar ~0,1 s → `momentary1Trigger.toggleLong()` alterna `engineOn` |
-| — | CH5–9, CH11–13 | Neutro (1500) — reservados para a Fase 4b |
+| — | CH5–9, CH11–13 | Neutro (1500) — não sintetizados |
 
-### Fase 4b (planejada)
+### Fase 4b (implementada) — controles de "experiência"
 
-- **Dpad ↑/↓** → CH5 (`FUNCTION_R`): estágios de luz, farol alto, jake brake — sintetizar
-  nas zonas 1000 / 1150 / 1850 / 2000 µs que o `rcTriggerRead()` espera. Atenção:
-  `channelReversed[5] = true` no perfil `FLYSKY_FS_I6S_LOADER` — compensar na síntese
-  ou dar um bloco de perfil próprio para `BLUETOOTH_COMMUNICATION` com
-  `channelReversed`/`channelAutoZero` todos `false`.
-- **Dpad ←/→** → CH6 (`FUNCTION_L`): setas / hazard.
-- **Círculo** → CH11 (hazard, latch). **Options / Share** → MODE1 / MODE2.
-  **L3** → neutro do câmbio. **Touchpad** → 5ª roda / winch.
-- **Feedback**: rumble em troca de marcha e na partida; cor da lightbar por estado do
-  motor (desligado = vermelho, ralenti = verde, acelerando = azul) — atualizar só na
-  mudança de estado, nunca por frame.
-- **Re-pareamento**: `BP32.forgetBluetoothKeys()` só num gesto (ex. PS + Share por 2 s) —
-  **nunca no boot** (o PoC antigo fazia, forçando re-pareamento sempre).
+Estes **não** passam por canal RC: `BluetoothInput.cpp` escreve direto nas globais do
+firmware (via `extern`), porque CH5 é multiplexado + invertido + auto-zero e daria um
+mapeamento frágil.
+
+| Controle (PS4) | Global | Efeito |
+|---|---|---|
+| **D-pad ↑** | `volumeIndex` ++ (limite `numberOfVolumeSteps-1`) | volume + · aplica `masterVolume = masterVolumePercentage[volumeIndex]` |
+| **D-pad ↓** | `volumeIndex` −− (limite 0) | volume − |
+| **D-pad →** | `lightsState = (>=5) ? 0 : +1` | cicla os 6 estágios de luz (apagado → meia-luz → baixo → neblina → tudo) |
+| **D-pad ←** | `headLightsHighBeamOn = !` | farol alto on/off (só visível com farol ligado, estágio ≥ 3; `led()` zera se não houver farol) |
+| **PS** segurado ~2 s | — | `BP32.forgetBluetoothKeys()` + `ESP.restart()` (re-parear) |
+
+Detecção por **borda de subida** do `dpad()` (`s_prevDpad`) — pressionar dispara uma vez.
+
+> **Acoplamento volume ↔ pilotagem:** `masterVolumePercentage[] = {100, 66, 44, 0}`.
+> Passos 2 (44 %) e 3 (mudo) têm `masterVolume ≤ masterVolumeCrawlerThreshold` (44) → o
+> `esc()` liga o **crawler mode** (controle direto, sem inércia virtual). Ou seja, baixar o
+> volume até "silêncio/mudo" também deixa a pilotagem 1:1. Um toggle dedicado de "controle
+> direto" (R3, desacoplado do volume) fica para a Fase 4c.
+
+### Fase 4c (a fazer)
+
+- **Setas + hazard** (CH6 `FUNCTION_L` / global `hazard`).
+- **Feedback**: rumble em troca de marcha / partida / perto do corte de giro; cor da
+  lightbar por estado do motor; LEDs de player = marcha atual.
+- **Toggle de "controle direto"** (R3) — desacopla `crawlerMode` de `masterVolume` no `esc()`.
 - **Debug**: `#define BLUETOOTH_DEBUG` no estilo do `CHANNEL_DEBUG`.
+- `forgetBluetoothKeys()` **nunca no boot** — só no gesto PS (já feito na 4b).
 
 ## Constantes de ajuste — `src/BluetoothMapping.h`
 
@@ -81,6 +95,7 @@ correspondente (ver doc 10).
 | `BT_TRIGGER_MAX` / `BT_TRIGGER_DEADZONE` | 1020 / 20 | Faixa/zona morta de `throttle()`/`brake()` (0..1023) |
 | `BT_AXIS_MIN/MAX` / `BT_AXIS_DEADZONE` | −512..511 / 24 | Faixa/zona morta de `axisX()` |
 | `BT_GEAR_US[]` | {—, 1000, 1500, 2000} | µs de cada posição de marcha |
+| `BT_REPAIR_HOLD_MS` | 2000 | Segurar PS por mais que isso → esquece pareamentos + reinicia |
 
 ## Failsafe
 

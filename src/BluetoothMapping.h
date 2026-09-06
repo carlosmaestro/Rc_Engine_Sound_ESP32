@@ -8,7 +8,7 @@
  * sintetiza pulseWidthRaw[1..13] em microssegundos (1000-2000, centro 1500) e entrega ao pipeline normal
  * (processRawChannels -> mapThrottle / rcTriggerRead / gearboxDetection / esc / led / mcpwmOutput).
  *
- * FASE 4a (atual) - so o essencial para dirigir + som:
+ * FASE 4a - dirigir + som (via canais sintetizados):
  *   Analogico esquerdo X ....... CH1  direcao
  *   R2 (gatilho) ............... CH3  acelerador para frente
  *   L2 (gatilho) .............. CH3  freio / re
@@ -16,13 +16,21 @@
  *   Quadrado (Square/X) ....... CH4  buzina (momentaneo)
  *   Cross (X/A) .............. CH10  liga/desliga motor (via momentary1Trigger.toggleLong do rcTriggerRead)
  *
- * FASE 4b (a fazer): Dpad -> luzes / setas (CH5/CH6), Circle -> hazard, Options/Share -> mode1/mode2,
- *   touchpad -> 5a roda / winch, feedback de rumble e cor da lightbar por estado do motor.
+ * FASE 4b - controles de "experiencia" (aplicados DIRETO nas globais do firmware, sem fingir canal):
+ *   D-pad cima / baixo ......... volume + / -   (volumeIndex 0..numberOfVolumeSteps-1, sem wrap)
+ *   D-pad direita ............. cicla estagio de luz  (lightsState 0..5)
+ *   D-pad esquerda ........... farol alto on/off  (headLightsHighBeamOn)
+ *   PS segurado ~2 s ......... esquece pareamentos + reinicia (re-parear)
+ *   NOTA: volume <= 44% (passos "silencio"/"mudo") tambem liga o "crawler mode" (controle direto) no esc().
+ *
+ * FASE 4c (a fazer): setas + hazard (CH6 / hazard), rumble + cor da lightbar por estado do motor,
+ *   LEDs de player = marcha, toggle de "controle direto" (R3), #define BLUETOOTH_DEBUG.
  */
 
 // -- Temporizacao / failsafe --
 const uint16_t BT_UPDATE_INTERVAL_MS = 15;  // com que frequencia chamar BP32.update() + reamostrar o gamepad
 const uint16_t BT_FAILSAFE_TIMEOUT_MS = 500; // sem dados do gamepad por mais que isto -> failSafe (canais ao centro)
+const uint16_t BT_REPAIR_HOLD_MS = 2000;     // segurar PS por mais que isto -> forgetBluetoothKeys() + reiniciar
 
 // -- Faixa dos canais sintetizados (bate com pulseNeutral/pulseSpan do perfil de radio ativo) --
 const uint16_t BT_PULSE_CENTER = 1500;

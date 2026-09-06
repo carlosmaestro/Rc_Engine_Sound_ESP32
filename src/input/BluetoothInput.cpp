@@ -7,16 +7,22 @@
 #include "BluetoothInput.h"
 #include "../main.h"            // processRawChannels(), failsafeRcSignals()
 #include "../BluetoothMapping.h"
+#include "../8_Sound.h"         // numberOfVolumeSteps, masterVolumePercentage[] (const, internal linkage - own copy here)
 
 // --- Globals owned by main.cpp that we feed / read ---
 extern uint16_t pulseWidthRaw[]; // [1..13] = channel pulse width in microseconds
 extern volatile bool failSafe;
+// Experience controls (Fase 4b): driven directly, not via synthesized channels
+extern uint8_t volumeIndex;                // index into masterVolumePercentage[]
+extern volatile int16_t masterVolume;      // applied value (%), also re-applied by rcTriggerRead() when stopped
+extern int8_t lightsState;                 // light-stage state machine (0..5), read by led()
+extern volatile bool headLightsHighBeamOn; // high/low beam, read by led()
 
-// --- Bluepad32 D-pad bit values (from uni_gamepad.h: UP=0, DOWN=1, RIGHT=2, LEFT=3), for phase 4b ---
-static const uint8_t BT_DPAD_UP [[maybe_unused]] = 0x01;
-static const uint8_t BT_DPAD_DOWN [[maybe_unused]] = 0x02;
-static const uint8_t BT_DPAD_RIGHT [[maybe_unused]] = 0x04;
-static const uint8_t BT_DPAD_LEFT [[maybe_unused]] = 0x08;
+// --- Bluepad32 D-pad bit values (from uni_gamepad.h: UP=0, DOWN=1, RIGHT=2, LEFT=3) ---
+static const uint8_t BT_DPAD_UP = 0x01;
+static const uint8_t BT_DPAD_DOWN = 0x02;
+static const uint8_t BT_DPAD_RIGHT = 0x04;
+static const uint8_t BT_DPAD_LEFT = 0x08;
 
 // --- State ---
 static ControllerPtr s_pads[BP32_MAX_GAMEPADS];
@@ -28,6 +34,8 @@ static uint32_t s_lastUpdateMs = 0;      // for BP32.update() rate limiting
 static uint8_t s_gear = BT_GEAR_MIN;
 static bool s_prevR1 = false;
 static bool s_prevL1 = false;
+static uint8_t s_prevDpad = 0;         // D-pad bitmask last frame (rising-edge detection)
+static uint32_t s_psHeldSinceMs = 0;   // millis() when PS was first seen held, 0 = not held
 
 // --- Bluepad32 callbacks ---
 static void onConnected(ControllerPtr ctl) {
@@ -130,7 +138,50 @@ void readBluetoothCommands() {
         // CH10 - engine on/off (Cross) -> handled by momentary1Trigger.toggleLong() ---
         pulseWidthRaw[10] = ctl->a() ? (BT_PULSE_CENTER + BT_PULSE_SPAN) : BT_PULSE_CENTER;
 
-        // Channels not mapped yet -> neutral (phase 4b) ---------------------------------
+        // --- Experience controls (Fase 4b): D-pad + PS, applied directly to firmware globals ---
+        uint8_t dpad = ctl->dpad();
+        const bool upEdge    = (dpad & BT_DPAD_UP)    && !(s_prevDpad & BT_DPAD_UP);
+        const bool downEdge  = (dpad & BT_DPAD_DOWN)  && !(s_prevDpad & BT_DPAD_DOWN);
+        const bool rightEdge = (dpad & BT_DPAD_RIGHT) && !(s_prevDpad & BT_DPAD_RIGHT);
+        const bool leftEdge  = (dpad & BT_DPAD_LEFT)  && !(s_prevDpad & BT_DPAD_LEFT);
+        s_prevDpad = dpad;
+
+        // Volume + / - (no wrap). masterVolume applied now; rcTriggerRead() re-applies it when stopped.
+        if (upEdge && volumeIndex + 1 < numberOfVolumeSteps) {
+            volumeIndex++;
+            masterVolume = masterVolumePercentage[volumeIndex];
+            Serial.printf("Bluetooth: volume step %u = %d%%\n", volumeIndex, masterVolume);
+        }
+        if (downEdge && volumeIndex > 0) {
+            volumeIndex--;
+            masterVolume = masterVolumePercentage[volumeIndex];
+            Serial.printf("Bluetooth: volume step %u = %d%%\n", volumeIndex, masterVolume);
+        }
+        // Light stage cycle (0..5) / high-low beam toggle
+        if (rightEdge) {
+            lightsState = (lightsState >= 5) ? 0 : (int8_t) (lightsState + 1);
+            Serial.printf("Bluetooth: light stage %d\n", lightsState);
+        }
+        if (leftEdge) {
+            headLightsHighBeamOn = !headLightsHighBeamOn;
+            Serial.printf("Bluetooth: high beam %s\n", headLightsHighBeamOn ? "on" : "off");
+        }
+
+        // Hold PS ~2s -> forget BT pairings + reboot (re-pair gesture)
+        if (ctl->miscSystem()) {
+            if (s_psHeldSinceMs == 0) {
+                s_psHeldSinceMs = now;
+            } else if (now - s_psHeldSinceMs > BT_REPAIR_HOLD_MS) {
+                Serial.println("Bluetooth: PS held -> forgetting keys, rebooting to re-pair...");
+                BP32.forgetBluetoothKeys();
+                delay(200);
+                ESP.restart();
+            }
+        } else {
+            s_psHeldSinceMs = 0;
+        }
+
+        // Channels not mapped yet -> neutral (phase 4c) ---------------------------------
         pulseWidthRaw[5] = BT_PULSE_CENTER;
         pulseWidthRaw[6] = BT_PULSE_CENTER;
         pulseWidthRaw[7] = BT_PULSE_CENTER;
