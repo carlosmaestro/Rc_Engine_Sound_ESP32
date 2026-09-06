@@ -21,6 +21,9 @@
 #if defined(PROFILE_CARLOS_BT_CAR)
 #include "CarlosBtCar.h"
 
+#elif defined(PROFILE_GOL_QUADRADO)
+#include "GolQuadrado.h"
+
 #elif defined(PROFILE_L120H_RADIO)
 #include "L120hRadio.h"
 

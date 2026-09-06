@@ -75,6 +75,7 @@
 
 // EU cars --------
 // #include "vehicles/VwBeetle.h" // VW Käfer / Beetle
+// #include "vehicles/GolQuadrado.h" // VW Gol "quadrado" — carro leve 4 cil. gasolina (sons do VW ar / Fusca)
 // #include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
 // #include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
 // #include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission

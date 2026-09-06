@@ -104,7 +104,8 @@ Não há mais 3 seletores para editar à mão: escolha o **env**.
 | env | Profile (`src/profiles/`) | Resumo |
 |---|---|---|
 | `l120h_radio` (default) | `L120hRadio.h` | Volvo L120H + rádio IBUS + placa 30 pinos + tuning original |
-| `carlos_bt_car` | `CarlosBtCar.h` | + `BLUETOOTH_COMMUNICATION` + ponte-H `RZ7886` + pinos do `Controller.ino` + sem Neopixel/bateria/3ª luz de freio + tuning `agileCar.h` |
+| `carlos_bt_car` | `CarlosBtCar.h` | placa `_carlosBoard.h` (Bluetooth, ponte-H `RZ7886`, pinos do `Controller.ino`, sem Neopixel/bateria/3ª luz) + veículo L120H + tuning `agileCar.h` |
+| `gol_quadrado` | `GolQuadrado.h` | mesma placa + veículo `vehicles/GolQuadrado.h` (carro leve 4 cil. gasolina, câmbio manual R1/L1) |
 | `wemos_d1_mini` | `WemosD1Mini.h` | variante Wemos D1 Mini |
 
 Para um carro novo: crie `src/profiles/<Nome>.h`, adicione um `#elif` em

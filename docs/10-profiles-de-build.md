@@ -67,8 +67,21 @@ flowchart TB
 | `[env]` / `PROFILE_*` | Arquivo | Resumo |
 |---|---|---|
 | `l120h_radio` | `src/profiles/L120hRadio.h` | L120H + IBUS + `FLYSKY_FS_I6S_LOADER` + placa 30 pinos + tuning original. **Build idêntico ao histórico.** Default (`platformio.ini` → `default_envs`). |
-| `carlos_bt_car` | `src/profiles/CarlosBtCar.h` | L120H + `BLUETOOTH_COMMUNICATION` + `RZ7886_DRIVER_MODE` + `PROFILE_NEOPIXEL 0`/`PROFILE_BATTERY_PROTECTION 0`/`PROFILE_THIRD_BRAKELIGHT 0` + pinos do `referencia/Controller.ino` + `#include ../tuning/agileCar.h`. |
+| `carlos_bt_car` | `src/profiles/CarlosBtCar.h` | placa `_carlosBoard.h` (Bluetooth, ponte‑H `RZ7886` 33/32, pinos do `Controller.ino`, sem Neopixel/bateria/3ª luz) + veículo **L120H** (carregadeira) + `#include ../tuning/agileCar.h`. |
+| `gol_quadrado` | `src/profiles/GolQuadrado.h` | mesma placa `_carlosBoard.h` + veículo **`vehicles/GolQuadrado.h`** (carro leve 4 cil. gasolina, câmbio manual R1/L1) + dinâmica "de carro" (tuning ágil opcional, comentado). |
 | `wemos_d1_mini` | `src/profiles/WemosD1Mini.h` | L120H + IBUS + `WEMOS_D1_MINI_ESP32`. |
+
+`src/profiles/_carlosBoard.h` = pinos + toggles da placa física do usuário, compartilhado
+por `carlos_bt_car` e `gol_quadrado` (o profile só faz `#include "_carlosBoard.h"`).
+
+### `vehicles/GolQuadrado.h`
+
+Preset de som para um **VW Gol "quadrado"** (G1/G2). Usa o banco de sons do VW ar / Fusca
+(`VWBeetleStart/Idle/Rev2/Knock.h`) — que é literalmente o motor do Gol BX inicial. Dinâmica
+de carro leve: `automatic=false` + `VIRTUAL_3_SPEED` (troca por R1/L1), `MAX_RPM_PERCENTAGE=320`,
+`acc/dec=5/3`, `escAccelerationSteps=4`, sem turbo/jake/beep de ré. Os params de rampa/`acc`
+são `#ifndef TUNE_*` — um profile pode aplicar `agileCar.h` por cima. Para som real do seu Gol
+(motor AP), converta o áudio com `tools/Audio2Header.html` e troque os `#include "sounds/..."`.
 
 ### `carlos_bt_car` — pinagem (de `referencia/Controller.ino`)
 
@@ -130,6 +143,7 @@ carrinho pequeno (`esc()` avança a máquina a cada `escRampTimeSecondGear` = 50
 |---|---|
 | `l120h_radio` | ✅ RAM 31.0% / Flash 42.2% — **byte-idêntico** ao build STOCK+IBUS anterior |
 | `carlos_bt_car` | ✅ RAM 30.8% / Flash 39.8% (Neopixel + proteção de bateria compilados fora) |
+| `gol_quadrado` | ✅ RAM 30.8% / Flash 34.6% (sons hidráulicos/esteira do L120H não entram) |
 | `wemos_d1_mini` | ✅ |
 | sem `-D PROFILE_*` | ✅ falha esperada: `#error` do `active.h` |
 | `DAC1`/`DAC2` != 25/26 | ✅ falha esperada: `#error` em `main.cpp` |
