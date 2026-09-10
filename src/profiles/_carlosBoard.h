@@ -15,8 +15,8 @@
 
 // -- Pinos (bloco PIN ASSIGNMENTS de main.cpp está sob #ifndef) --
 #define STEERING_PIN 13              // Controller.ino: SERVO_DIRECAO
-#define RZ7886_PIN1 33               // ponte-H IN1  (Controller.ino usava GPIO27; movido)
-#define RZ7886_PIN2 32               // ponte-H IN2  (Controller.ino: PONTE_H_IN02)
+#define RZ7886_PIN1 32               // ponte-H IN1  (Controller.ino usava GPIO27; movido)
+#define RZ7886_PIN2 33               // ponte-H IN2  (Controller.ino: PONTE_H_IN02)
 
 #define HEADLIGHT_PIN 15             // Controller.ino: FAROL (strapping pin)
 #define FOGLIGHT_PIN 2               // Controller.ino: FAROL_MILHA (strapping pin)

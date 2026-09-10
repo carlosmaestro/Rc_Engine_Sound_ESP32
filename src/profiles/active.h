@@ -24,6 +24,9 @@
 #elif defined(PROFILE_GOL_QUADRADO)
 #include "GolQuadrado.h"
 
+#elif defined(PROFILE_CARRO_CORRIDA)
+#include "CarroCorrida.h"
+
 #elif defined(PROFILE_L120H_RADIO)
 #include "L120hRadio.h"
 

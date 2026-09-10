@@ -58,7 +58,7 @@ flowchart TB
 | Veículo / sons | `PROFILE_VEHICLE "vehicles/<X>.h"` (o único obrigatório) |
 | Modo de comunicação | `BLUETOOTH_COMMUNICATION` \| `IBUS_COMMUNICATION` \| `SBUS_COMMUNICATION` \| `SUMD_COMMUNICATION` \| `PPM_COMMUNICATION` \| (nenhum = PWM nos headers CH1–CH6) |
 | Perfil de rádio | `FLYSKY_FS_I6S_LOADER` \| `FLYSKY_FS_I6X` \| `FLYSKY_GT5` \| `RGT_EX86100` \| `GRAUPNER_MZ_12` \| `MICRO_RC` \| ... (fornece `channelReversed[]`/`channelAutoZero[]`/`pulseSpan`) |
-| Toggles de placa | `PROFILE_NEOPIXEL` (0/1) · `PROFILE_BATTERY_PROTECTION` (0/1) · `PROFILE_THIRD_BRAKELIGHT` (0/1) · `PROFILE_EXPO_THROTTLE` (0/1) · `RZ7886_DRIVER_MODE` (opt-in) · `SPI_DASHBOARD` (opt-in) · `WEMOS_D1_MINI_ESP32` (opt-in) |
+| Toggles de placa | `PROFILE_NEOPIXEL` (0/1) · `PROFILE_BATTERY_PROTECTION` (0/1) · `PROFILE_THIRD_BRAKELIGHT` (0/1) · `PROFILE_EXPO_THROTTLE` (0/1) · `PROFILE_STEERING_REVERSED` (0/1 — inverte CH1/direção, para chassi com servo/tirante espelhado) · `RZ7886_DRIVER_MODE` (opt-in) · `SPI_DASHBOARD` (opt-in) · `WEMOS_D1_MINI_ESP32` (opt-in) |
 | Pinos | qualquer `*_PIN` do bloco PIN ASSIGNMENTS: `STEERING_PIN`, `RZ7886_PIN1/2`, `HEADLIGHT_PIN`, `TAILLIGHT_PIN`, `INDICATOR_LEFT/RIGHT_PIN`, `FOGLIGHT_PIN`, `REVERSING_LIGHT_PIN`, `ROOFLIGHT_PIN`, `SIDELIGHT_PIN`, `BEACON_LIGHT1/2_PIN`, `CABLIGHT_PIN`, `SHAKER_MOTOR_PIN`, `COMMAND_RX`, `BATTERY_DETECT_PIN`, `PWM_PINS_INIT`/`PWM_CHANNELS_INIT` (`-1` = ausente / no-op) |
 | Tuning (via `#define TUNE_*` ou `#include ../tuning/<set>.h`) | `TUNE_ESC_RAMP_1ST/2ND/3RD`, `TUNE_ESC_BRAKE_STEPS`, `TUNE_ESC_ACCEL_STEPS`, `TUNE_ENGINE_ACC`, `TUNE_ENGINE_DEC` (const — efeito imediato) · `TUNE_ESC_TAKEOFF_PUNCH`, `TUNE_ESC_PULSE_SPAN`, `TUNE_ESC_CRAWLER_RAMP`, `TUNE_GLOBAL_ACCEL_PCT` (EEPROM-backed) |
 
@@ -69,6 +69,7 @@ flowchart TB
 | `l120h_radio` | `src/profiles/L120hRadio.h` | L120H + IBUS + `FLYSKY_FS_I6S_LOADER` + placa 30 pinos + tuning original. **Build idêntico ao histórico.** Default (`platformio.ini` → `default_envs`). |
 | `carlos_bt_car` | `src/profiles/CarlosBtCar.h` | placa `_carlosBoard.h` (Bluetooth, ponte‑H `RZ7886` 33/32, pinos do `Controller.ino`, sem Neopixel/bateria/3ª luz) + veículo **L120H** (carregadeira) + `#include ../tuning/agileCar.h`. |
 | `gol_quadrado` | `src/profiles/GolQuadrado.h` | mesma placa `_carlosBoard.h` + veículo **`vehicles/GolQuadrado.h`** (carro leve 4 cil. gasolina, câmbio manual R1/L1) + dinâmica "de carro" (tuning ágil opcional, comentado). |
+| `carro_corrida` | `src/profiles/CarroCorrida.h` | mesma placa `_carlosBoard.h` + veículo **`vehicles/CarroCorrida.h`** (V12, som da biblioteca "LaFerrari", câmbio manual R1/L1 com som de troca de marcha ajustado) + dinâmica "de corrida" (tuning ágil opcional, comentado). |
 | `wemos_d1_mini` | `src/profiles/WemosD1Mini.h` | L120H + IBUS + `WEMOS_D1_MINI_ESP32`. |
 
 `src/profiles/_carlosBoard.h` = pinos + toggles da placa física do usuário, compartilhado
@@ -82,6 +83,24 @@ de carro leve: `automatic=false` + `VIRTUAL_3_SPEED` (troca por R1/L1), `MAX_RPM
 `acc/dec=5/3`, `escAccelerationSteps=4`, sem turbo/jake/beep de ré. Os params de rampa/`acc`
 são `#ifndef TUNE_*` — um profile pode aplicar `agileCar.h` por cima. Para som real do seu Gol
 (motor AP), converta o áudio com `tools/Audio2Header.html` e troque os `#include "sounds/..."`.
+
+### `vehicles/CarroCorrida.h`
+
+Preset de som de **carro de corrida (V12)**, usando o banco de sons `LaFerrari*.h` já
+presente na biblioteca (`sounds/LaFerrariStart/Idle/Rev/Knock.h`). O preset original da
+biblioteca (`vehicles/LaFerrari.h`) usa `doubleClutch = true` — nesse modo o firmware
+**nunca** toca a amostra de troca de marcha (`main.cpp`: `shiftingTrigger && !automatic &&
+!doubleClutch`), porque a troca é simulada por um "blip" de RPM em vez de um som de
+engate. Este preset troca a caixa para manual "virtual" (`automatic=false` +
+`doubleClutch=false`, `VIRTUAL_3_SPEED`, troca por R1/L1 — igual ao `GolQuadrado`), o que
+ativa de fato `sounds/ClunkingGearShifting.h` (`shiftingVolumePercentage=140`, um pouco
+acima do default 100 para ficar nítido). Também ajusta a dinâmica pra ficar mais "punchy"
+que o preset original (`escRampTime*` menor, `escBrakeSteps`/`escAccelerationSteps`
+maiores, `acc/dec=7/4`, `clutchEngagingPoint=70`) e mantém `TIRE_SQUEAL` ligado.
+`MAX_RPM_PERCENTAGE=320` (mesmo teto de `maxIbusRpmPercentage` já aplicado nos modos
+BUS/Bluetooth). O chassi deste carro tem a direção espelhada em relação aos outros carros
+do usuário, então o profile também define `PROFILE_STEERING_REVERSED 1` (ver abaixo) —
+sem isso o carro vira para o lado errado.
 
 ### `carlos_bt_car` — pinagem (de `referencia/Controller.ino`)
 

@@ -168,10 +168,17 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
 
+// Some physical chassis have the steering servo/linkage mirrored, so left/right come out
+// swapped. Let a build profile flip CH1 (STEERING) without touching every other profile
+// that shares this radio config (e.g. #define PROFILE_STEERING_REVERSED 1 in the profile).
+#ifndef PROFILE_STEERING_REVERSED
+#define PROFILE_STEERING_REVERSED 0
+#endif
+
 // Channels reversed or not
 boolean channelReversed[14] = {
-    false, // CH0 (unused)
-    false, // CH1
+    false,                     // CH0 (unused)
+    PROFILE_STEERING_REVERSED, // CH1
     false, // CH2
     false, // CH3
     false, // CH4
